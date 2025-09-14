@@ -1,5 +1,5 @@
-
 import userModel from "../models/userModel.js";
+import roleModel from "../models/roleModel.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
@@ -17,11 +17,12 @@ export const register = async (req, res) => {
 
   const hashpass = await bcrypt.hash(password, 10);
   const newUser = await userModel.create({ role, name, email, password: hashpass });
+const userRole = await roleModel.findById(newUser.role); // Fetch actual role document by ObjectId
 
-  const token = jwt.sign(
-    { userid: newUser._id, email, role },
-    process.env.JWT_SECRET
-  );
+const token = jwt.sign(
+  { userid: newUser._id, email, role: userRole.role },
+  process.env.JWT_SECRET
+);
 
   res.status(201).json({
     message: "User created successfully",
@@ -46,10 +47,16 @@ export const login = async (req, res) => {
     return res.status(401).json({  message: "Password not match" });
   }
 
-  const token = jwt.sign(
-    { userid: userExist._id, email, role: userExist.role },
-    process.env.JWT_SECRET
-  );
+ const userRole = await roleModel.findById(userExist.role); // Fetch actual role document by ObjectId
+
+// if (!userRole) {
+//   return res.status(500).json({ message: "Role data corrupted" });
+// }
+
+const token = jwt.sign(
+  { userid: userExist._id, email, role: userRole.role },
+  process.env.JWT_SECRET
+);
 
   res.status(200).json({
 
@@ -93,3 +100,62 @@ export const createEmployee = async (req, res) => {
   }
 };
 
+export const getAllEmployees = async (req, res) => {
+  try {
+    const { department, name } = req.query;
+    const filter = {};
+
+    // Filter by department if provided
+    if (department) {
+      filter.department = department;
+    }
+
+    // Filter by name (case-insensitive, partial match)
+    if (name) {
+      filter.name = { $regex: name, $options: "i" };
+    }
+
+    const employees = await userModel.find(filter);
+
+    if (employees.length === 0) {
+      return res.status(404).json({ message: "No Employees Found" });
+    }
+
+    res.status(200).json(employees);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
+export const editEmployee = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const data = req.body;
+    const updatedemployee = await userModel.findByIdAndUpdate(id, data, {
+      new: true,
+    });
+    if (!updatedemployee) {
+      return res.status(404).json({ error: "Employee not found" });
+    }
+    res.json({
+      message: "employee updated successfully",
+      updatedemployee,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const deleteEmployee = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const deletedEmployee = await userModel.findByIdAndDelete(id);
+    if (!deletedEmployee) {
+      return res.status(404).json({ error: "Employee not found" });
+    }
+    res.json({ message: "Employee deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
