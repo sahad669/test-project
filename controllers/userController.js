@@ -3,6 +3,7 @@ import roleModel from "../models/roleModel.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
+//register
 export const register = async (req, res) => {
   const { email, password, name, role } = req.body;
 
@@ -16,13 +17,18 @@ export const register = async (req, res) => {
   }
 
   const hashpass = await bcrypt.hash(password, 10);
-  const newUser = await userModel.create({ role, name, email, password: hashpass });
-const userRole = await roleModel.findById(newUser.role); // Fetch actual role document by ObjectId
+  const newUser = await userModel.create({
+    role,
+    name,
+    email,
+    password: hashpass,
+  });
+  const userRole = await roleModel.findById(newUser.role);
 
-const token = jwt.sign(
-  { userid: newUser._id, email, role: userRole.role },
-  process.env.JWT_SECRET
-);
+  const token = jwt.sign(
+    { userid: newUser._id, email, role: userRole.role },
+    process.env.JWT_SECRET
+  );
 
   res.status(201).json({
     message: "User created successfully",
@@ -31,6 +37,7 @@ const token = jwt.sign(
   });
 };
 
+//login
 export const login = async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
@@ -39,33 +46,29 @@ export const login = async (req, res) => {
 
   const userExist = await userModel.findOne({ email });
   if (!userExist) {
-    return res.status(404).json({  message: "User not found" });
+    return res.status(404).json({ message: "User not found" });
   }
 
   const verified = await bcrypt.compare(password, userExist.password);
   if (!verified) {
-    return res.status(401).json({  message: "Password not match" });
+    return res.status(401).json({ message: "Password not match" });
   }
 
- const userRole = await roleModel.findById(userExist.role); // Fetch actual role document by ObjectId
+  const userRole = await roleModel.findById(userExist.role);
 
-// if (!userRole) {
-//   return res.status(500).json({ message: "Role data corrupted" });
-// }
-
-const token = jwt.sign(
-  { userid: userExist._id, email, role: userRole.role },
-  process.env.JWT_SECRET
-);
+  const token = jwt.sign(
+    { userid: userExist._id, email, role: userRole.role },
+    process.env.JWT_SECRET
+  );
 
   res.status(200).json({
-
     message: "Logged in successfully",
     token,
     userid: userExist._id,
   });
 };
 
+//create employee
 export const createEmployee = async (req, res) => {
   try {
     const { name, email, password, role, department } = req.body;
@@ -100,17 +103,16 @@ export const createEmployee = async (req, res) => {
   }
 };
 
+// get all employee + filter by anme and department
 export const getAllEmployees = async (req, res) => {
   try {
     const { department, name } = req.query;
     const filter = {};
 
-    // Filter by department if provided
     if (department) {
       filter.department = department;
     }
 
-    // Filter by name (case-insensitive, partial match)
     if (name) {
       filter.name = { $regex: name, $options: "i" };
     }
@@ -127,7 +129,7 @@ export const getAllEmployees = async (req, res) => {
   }
 };
 
-
+//edit employee
 export const editEmployee = async (req, res) => {
   try {
     const id = req.params.id;
@@ -147,6 +149,7 @@ export const editEmployee = async (req, res) => {
   }
 };
 
+// delete employee
 export const deleteEmployee = async (req, res) => {
   try {
     const id = req.params.id;
@@ -155,6 +158,22 @@ export const deleteEmployee = async (req, res) => {
       return res.status(404).json({ error: "Employee not found" });
     }
     res.json({ message: "Employee deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// get employee by id
+export const getEmployeeById = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const employee = await userModel.findById(id);
+
+    if (!employee) {
+      return res.status(404).json({ error: "Employee not found" });
+    }
+
+    res.status(200).json(employee);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
