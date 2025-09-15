@@ -1,5 +1,5 @@
 import express from "express";
-import { createEmployee, deleteEmployee, editEmployee, getAllEmployees, login, register,getEmployeeById } from "../controllers/userController.js";
+import {  login, register,createEmployee,getAllEmployees,getEmployeeById,editEmployee,deleteEmployee } from "../controllers/userController.js";
 import { checkAdmin, isLogged } from "../middleware/authMiddleware.js";
 
 const router = express.Router();

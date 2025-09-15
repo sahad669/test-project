@@ -25,7 +25,7 @@ export const isLogged = (req, res, next) => {
 
 export const checkAdmin = (req, res, next) => {
   if (req.user?.role !== "admin") {
-    return res.json({ message: "Admins only can add new user" });
+    return res.json({ message: "Only admins can perform this action" });
   }
   next();
 };

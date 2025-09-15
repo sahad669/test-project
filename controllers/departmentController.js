@@ -2,11 +2,11 @@ import departmentModel from "../models/departmentModel.js";
 
 // add department
 export const addDepartment = async (req, res) => {
-  const { departmentName, description } = req.body;
-  if (!departmentName || !description) {
+  const { department, description } = req.body;
+  if (!department || !description) {
     return res.json({ error: "fill all the fields" });
   }
-  const newDepartment = await departmentModel.create({ departmentName, description });
+  const newDepartment = await departmentModel.create({ department, description });
   res.status(201).json({ message: "Department Created Successfully", newDepartment });
 };
 
